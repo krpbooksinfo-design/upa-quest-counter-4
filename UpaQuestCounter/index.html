@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ウパクエストカウンター</title>
+<style>
+body{margin:0;padding:10px;font-family:sans-serif;background:#f6f6f6}
+.box{background:#fff;border-radius:12px;padding:10px;margin-bottom:10px}
+.top{position:relative;text-align:center}
+.full{font-size:32px;font-weight:bold}
+.row{display:flex;gap:10px}
+.left,.right{flex:1}
+button{font-size:18px;padding:10px;margin:4px}
+.small{font-size:13px}
+input{width:100%;font-size:24px;text-align:right}
+@media(max-width:600px){.row{flex-direction:column}}
+</style>
+</head>
+<body>
+
+<div class="top box">
+  <div class="full">フルパワー：<span id="fullPower">0</span></div>
+  <button class="small" id="muteBtn" style="position:absolute;right:10px;top:10px">🔊</button>
+</div>
+
+<div class="row">
+  <div class="left">
+    <div class="box">
+      パワー：<span id="power">0</span><br>
+      <span class="small">ひとつ前：<span id="powerPrev">0</span></span>
+    </div>
+
+    <div class="box">
+      <input id="disp" value="0" readonly>
+      <div>
+        <button onclick="press('7')">7</button><button onclick="press('8')">8</button><button onclick="press('9')">9</button><button onclick="press('+')">+</button>
+      </div>
+      <div>
+        <button onclick="press('4')">4</button><button onclick="press('5')">5</button><button onclick="press('6')">6</button><button onclick="press('-')">-</button>
+      </div>
+      <div>
+        <button onclick="press('1')">1</button><button onclick="press('2')">2</button><button onclick="press('3')">3</button><button onclick="press('*')">×</button>
+      </div>
+      <div>
+        <button onclick="press('0')">0</button><button onclick="press('00')">00</button><button onclick="equal()">=</button><button onclick="clearDisp()">C</button>
+      </div>
+    </div>
+
+    <button onclick="fullCalc()">フルパワー！</button>
+    <button class="small" onclick="undo()">ひとつまえに戻す</button>
+    <button class="small" onclick="allClear()">オールクリア</button>
+  </div>
+
+  <div class="right">
+    <div class="box">
+      なかま：<span id="friends">1</span><br>
+      <button onclick="changeFriends(1)">＋</button>
+      <button onclick="changeFriends(-1)">－</button>
+    </div>
+
+    <div class="box">
+      🎲 サイコロ<br>
+      <span id="dice">-</span><br>
+      <button onclick="rollDice()">ふる</button>
+    </div>
+
+    <div class="box">
+      🪙 コイントス<br>
+      <span id="coin">-</span><br>
+      <button onclick="flipCoin()">なげる</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---- 状態 ----
+let dispVal='0'
+let power=0
+let history=[]
+let friends=1
+let muted=false
+
+// ---- 効果音 ----
+const seCoin=new Audio('coin.m4a')
+const seDice=new Audio('dice.m4a')
+const seFull=new Audio('full.m4a')
+const seClick=new Audio('click.m4a')
+function play(se){if(!muted){se.currentTime=0;se.play()}}
+
+// ---- ミュート ----
+document.getElementById('muteBtn').onclick=function(){
+  muted=!muted
+  this.textContent=muted?'🔇':'🔊'
+}
+
+// ---- 電卓 ----
+function press(v){play(seClick);if(dispVal==='0')dispVal='';dispVal+=v;disp.value=dispVal}
+function clearDisp(){dispVal='0';disp.value=dispVal}
+function equal(){
+  let r
+  try{r=eval(dispVal)}catch(e){return}
+  history.push(power)
+  power+=r
+  if(power>999999)power=999999
+  updatePower()
+  clearDisp()
+}
+
+function updatePower(){
+  document.getElementById('power').textContent=power
+  document.getElementById('powerPrev').textContent=history.length?history[history.length-1]:0
+}
+
+function undo(){if(history.length){power=history.pop();updatePower()}}
+
+// ---- なかま ----
+function changeFriends(v){play(seClick);friends+=v;if(friends<1)friends=1;if(friends>99)friends=99;document.getElementById('friends').textContent=friends}
+
+// ---- フルパワー ----
+function fullCalc(){play(seFull);document.getElementById('fullPower').textContent=Math.min(9999999,power*friends)}
+
+// ---- オールクリア ----
+function allClear(){
+  if(!confirm('リセットしますか？'))return
+  dispVal='0';power=0;history=[];friends=1
+  disp.value='0'
+  document.getElementById('power').textContent=0
+  document.getElementById('powerPrev').textContent=0
+  document.getElementById('friends').textContent=1
+  document.getElementById('fullPower').textContent=0
+}
+
+// ---- サイコロ ----
+function rollDice(){play(seDice)
+  let i=setInterval(()=>{dice.textContent=Math.floor(Math.random()*6)+1},100)
+  setTimeout(()=>{clearInterval(i);dice.textContent=Math.floor(Math.random()*6)+1},1000)
+}
+
+// ---- コイントス ----
+function flipCoin(){play(seCoin)
+  let i=setInterval(()=>{coin.textContent=Math.random()<0.5?'おもて':'うら'},100)
+  setTimeout(()=>{clearInterval(i);coin.textContent=Math.random()<0.5?'おもて':'うら'},1000)
+}
+</script>
+</body>
+</html>
