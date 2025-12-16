@@ -15,6 +15,29 @@ button{font-size:18px;padding:10px;margin:4px}
 .small{font-size:13px}
 input{width:100%;font-size:24px;text-align:right}
 @media(max-width:600px){.row{flex-direction:column}}
+
+ /* スキル表示 */
+#skillOverlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.8);
+  display:none;
+  justify-content:center;
+  align-items:center;
+  z-index:999;
+}
+#skillBox{
+  background:#fff;
+  border-radius:12px;
+  padding:10px;
+  max-width:90%;
+  max-height:90%;
+  text-align:center;
+}
+#skillBox img{
+  max-width:100%;
+  max-height:70vh;
+}
 </style>
 </head>
 <body>
@@ -50,6 +73,7 @@ input{width:100%;font-size:24px;text-align:right}
     <button onclick="fullCalc()">フルパワー！</button>
     <button class="small" onclick="undo()">ひとつまえに戻す</button>
     <button class="small" onclick="allClear()">オールクリア</button>
+    <button class="small" onclick="openSkill()">スキルかくにん</button>
   </div>
 
   <div class="right">
@@ -73,6 +97,15 @@ input{width:100%;font-size:24px;text-align:right}
   </div>
 </div>
 
+<!-- スキル画面 -->
+<div id="skillOverlay">
+  <div id="skillBox">
+    <img src="skill.png" alt="スキル">
+    <br>
+    <button onclick="closeSkill()">とじる</button>
+  </div>
+</div>
+
 <script>
 // ---- 状態 ----
 let dispVal='0'
@@ -80,6 +113,7 @@ let power=0
 let history=[]
 let friends=1
 let muted=false
+let skillOpen=false
 
 // ---- 効果音 ----
 const seCoin=new Audio('coin.m4a')
@@ -89,15 +123,36 @@ const seClick=new Audio('click.m4a')
 function play(se){if(!muted){se.currentTime=0;se.play()}}
 
 // ---- ミュート ----
-document.getElementById('muteBtn').onclick=function(){
+muteBtn.onclick=function(){
   muted=!muted
   this.textContent=muted?'🔇':'🔊'
 }
 
+// ---- スキル ----
+function openSkill(){
+  skillOpen=true
+  skillOverlay.style.display='flex'
+}
+function closeSkill(){
+  skillOpen=false
+  skillOverlay.style.display='none'
+}
+
 // ---- 電卓 ----
-function press(v){play(seClick);if(dispVal==='0')dispVal='';dispVal+=v;disp.value=dispVal}
-function clearDisp(){dispVal='0';disp.value=dispVal}
+function press(v){
+  if(skillOpen)return
+  play(seClick)
+  if(dispVal==='0')dispVal=''
+  dispVal+=v
+  disp.value=dispVal
+}
+function clearDisp(){
+  if(skillOpen)return
+  dispVal='0'
+  disp.value=dispVal
+}
 function equal(){
+  if(skillOpen)return
   let r
   try{r=eval(dispVal)}catch(e){return}
   history.push(power)
@@ -108,40 +163,71 @@ function equal(){
 }
 
 function updatePower(){
-  document.getElementById('power').textContent=power
-  document.getElementById('powerPrev').textContent=history.length?history[history.length-1]:0
+  powerSpan.textContent=power
+  powerPrev.textContent=history.length?history[history.length-1]:0
 }
 
-function undo(){if(history.length){power=history.pop();updatePower()}}
+function undo(){
+  if(skillOpen)return
+  if(history.length){
+    power=history.pop()
+    updatePower()
+  }
+}
 
 // ---- なかま ----
-function changeFriends(v){play(seClick);friends+=v;if(friends<1)friends=1;if(friends>99)friends=99;document.getElementById('friends').textContent=friends}
+function changeFriends(v){
+  if(skillOpen)return
+  play(seClick)
+  friends+=v
+  if(friends<1)friends=1
+  if(friends>99)friends=99
+  friendsSpan.textContent=friends
+}
 
 // ---- フルパワー ----
-function fullCalc(){play(seFull);document.getElementById('fullPower').textContent=Math.min(9999999,power*friends)}
+function fullCalc(){
+  if(skillOpen)return
+  play(seFull)
+  fullPower.textContent=Math.min(9999999,power*friends)
+}
 
 // ---- オールクリア ----
 function allClear(){
+  if(skillOpen)return
   if(!confirm('リセットしますか？'))return
-  dispVal='0';power=0;history=[];friends=1
+  dispVal='0'
+  power=0
+  history=[]
+  friends=1
   disp.value='0'
-  document.getElementById('power').textContent=0
-  document.getElementById('powerPrev').textContent=0
-  document.getElementById('friends').textContent=1
-  document.getElementById('fullPower').textContent=0
+  powerSpan.textContent=0
+  powerPrev.textContent=0
+  friendsSpan.textContent=1
+  fullPower.textContent=0
 }
 
 // ---- サイコロ ----
-function rollDice(){play(seDice)
+function rollDice(){
+  if(skillOpen)return
+  play(seDice)
   let i=setInterval(()=>{dice.textContent=Math.floor(Math.random()*6)+1},100)
   setTimeout(()=>{clearInterval(i);dice.textContent=Math.floor(Math.random()*6)+1},1000)
 }
 
 // ---- コイントス ----
-function flipCoin(){play(seCoin)
+function flipCoin(){
+  if(skillOpen)return
+  play(seCoin)
   let i=setInterval(()=>{coin.textContent=Math.random()<0.5?'おもて':'うら'},100)
   setTimeout(()=>{clearInterval(i);coin.textContent=Math.random()<0.5?'おもて':'うら'},1000)
 }
+
+// ---- DOM短縮 ----
+const disp=document.getElementById('disp')
+const powerSpan=document.getElementById('power')
+const powerPrev=document.getElementById('powerPrev')
+const friendsSpan=document.getElementById('friends')
 </script>
 </body>
 </html>
